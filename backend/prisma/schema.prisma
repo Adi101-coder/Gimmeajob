@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  PAUSED
+  COMPLETED
+  STOPPED
+  FAILED
+}
+
+enum QueueItemStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  SKIPPED
+  CANCELLED
+}
+
+enum LogStatus {
+  SUCCESS
+  FAILED
+  SKIPPED
+  RETRY
+}
+
+model Campaign {
+  id              String         @id @default(uuid())
+  jobRole         String
+  dailyLimit      Int
+  mode            String         // "immediate" | "schedule"
+  scheduledDate   DateTime?
+  scheduledTime   String?
+  status          CampaignStatus @default(DRAFT)
+  totalContacts   Int            @default(0)
+  sentCount       Int            @default(0)
+  failedCount     Int            @default(0)
+  skippedCount    Int            @default(0)
+  todaySentCount  Int            @default(0)
+  lastSentAt      DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  pausedAt        DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  queueItems EmailQueueItem[]
+  logs       EmailLog[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Contact {
+  id        String   @id @default(uuid())
+  name      String
+  company   String
+  position  String
+  email     String   @unique
+  isValid   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  queueItems EmailQueueItem[]
+  logs       EmailLog[]
+
+  @@index([email])
+  @@index([company])
+}
+
+model EmailQueueItem {
+  id           String          @id @default(uuid())
+  campaignId   String
+  contactId    String
+  status       QueueItemStatus @default(PENDING)
+  scheduledAt  DateTime?
+  processedAt  DateTime?
+  attempts     Int             @default(0)
+  lastError    String?
+  subject      String?
+  body         String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact  Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, contactId])
+  @@index([campaignId, status])
+  @@index([status, scheduledAt])
+  @@index([scheduledAt])
+}
+
+model EmailLog {
+  id              String    @id @default(uuid())
+  campaignId      String
+  contactId       String
+  recipient       String
+  company         String
+  subject         String?
+  status          LogStatus
+  smtpResponse    String?
+  aiStatus        String?
+  errorMessage    String?
+  sentAt          DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact  Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([recipient])
+  @@index([company])
+  @@index([sentAt])
+  @@index([createdAt])
+}
+
+model AppSettings {
+  id        String   @id @default("default")
+  config    Json
+  updatedAt DateTime @updatedAt
+}
+
+model ImportReport {
+  id            String   @id @default(uuid())
+  totalRows     Int
+  validRows     Int
+  invalidRows   Int
+  duplicateRows Int
+  errors        Json
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+}

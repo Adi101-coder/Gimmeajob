@@ -1,0 +1,33 @@
+{
+  "dailyEmailLimit": 20,
+  "workingHours": {
+    "start": "09:00",
+    "end": "17:00",
+    "timezone": "America/New_York"
+  },
+  "defaultSchedule": {
+    "mode": "schedule",
+    "time": "09:00"
+  },
+  "smtp": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "secure": false,
+    "fromName": "Your Name",
+    "fromEmail": "your.email@gmail.com"
+  },
+  "llm": {
+    "model": "gpt-4o-mini",
+    "temperature": 0.7,
+    "maxTokens": 1024
+  },
+  "retry": {
+    "count": 3,
+    "delayMs": 5000
+  },
+  "randomDelay": {
+    "minSeconds": 30,
+    "maxSeconds": 120
+  },
+  "emailSubject": "Application for {{JOB_ROLE}} Position at {{COMPANY_NAME}}"
+}

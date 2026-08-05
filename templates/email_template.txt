@@ -1,0 +1,11 @@
+Dear {{HR_NAME}},
+
+I hope this message finds you well. I am writing to express my interest in the {{JOB_ROLE}} position at {{COMPANY_NAME}}.
+
+With my background and experience, I believe I would be a strong fit for this role. I am particularly drawn to {{COMPANY_NAME}} because of its reputation and the opportunity to contribute meaningfully to your team.
+
+I have attached my resume for your review. I would welcome the opportunity to discuss how my skills and experience align with your needs.
+
+Thank you for your time and consideration.
+
+Best regards

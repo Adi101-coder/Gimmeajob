@@ -1,0 +1,15 @@
+{
+  "name": "gimmeajob",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "generate-data": "node scripts/generate-sample-data.mjs",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:worker": "cd backend && npm run worker",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "test": "cd backend && npm test",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down"
+  }
+}
