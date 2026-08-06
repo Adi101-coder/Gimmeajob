@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "generate-data": "node scripts/generate-sample-data.mjs",
+    "sync-template": "npx tsx scripts/sync-email-template.ts",
     "dev:backend": "cd backend && npm run dev",
     "dev:worker": "cd backend && npm run worker",
     "dev:frontend": "cd frontend && npm run dev",

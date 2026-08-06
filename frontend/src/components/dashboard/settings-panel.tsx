@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { TestEmailPanel } from '@/components/dashboard/test-email-panel';
+import { DeliverabilityPanel } from '@/components/dashboard/deliverability-panel';
 
 export function SettingsPanel() {
   const { data: config, isLoading } = useQuery({
@@ -59,6 +60,8 @@ export function SettingsPanel() {
       </div>
 
       <TestEmailPanel />
+
+      <DeliverabilityPanel />
 
       <div className="rounded-3xl bg-card p-6 shadow-soft">
         <h3 className="mb-4 text-base font-semibold">System health</h3>

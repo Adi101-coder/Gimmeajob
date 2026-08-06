@@ -376,39 +376,44 @@ export class CampaignService {
 
     if (!campaign) {
       const contact = await prisma.contact.findFirst({ where: { isValid: true } });
-      if (!contact) return null;
+      const previewContact = contact ?? {
+        name: 'Hiring Manager',
+        email: 'recruiter@example.com',
+        company: 'Sample Company',
+        position: 'Recruiter',
+      };
 
-      const template = await templateService.loadTemplate();
-      const variables = templateService.buildVariables(contact, 'Software Engineer');
+      const template = await templateService.loadTemplate(true);
+      const variables = templateService.buildVariables(previewContact, 'Junior Software Engineer');
       const rendered = templateService.renderTemplate(template, variables);
       const subject = templateService.renderSubject(config.emailSubject, variables);
 
-      if (llmService.isConfigured()) {
+      if (contact && llmService.isConfigured()) {
         const personalized = await llmService.personalizeEmail(
           {
-            recruiterName: contact.name,
-            company: contact.company,
-            recruiterPosition: contact.position,
-            targetRole: 'Software Engineer',
+            recruiterName: previewContact.name,
+            company: previewContact.company,
+            recruiterPosition: previewContact.position,
+            targetRole: 'Junior Software Engineer',
             template: rendered,
           },
           config
         );
         return {
-          recipient: contact.email,
-          company: contact.company,
+          recipient: previewContact.email,
+          company: previewContact.company,
           subject,
           body: personalized.body,
-          contactName: contact.name,
+          contactName: previewContact.name,
         };
       }
 
       return {
-        recipient: contact.email,
-        company: contact.company,
+        recipient: previewContact.email,
+        company: previewContact.company,
         subject,
         body: rendered,
-        contactName: contact.name,
+        contactName: previewContact.name,
       };
     }
 

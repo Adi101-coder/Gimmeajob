@@ -3,7 +3,7 @@
   "workingHours": {
     "start": "09:00",
     "end": "17:00",
-    "timezone": "America/New_York"
+    "timezone": "Asia/Kolkata"
   },
   "defaultSchedule": {
     "mode": "schedule",
@@ -13,8 +13,13 @@
     "host": "smtp.gmail.com",
     "port": 587,
     "secure": false,
-    "fromName": "Your Name",
-    "fromEmail": "your.email@gmail.com"
+    "fromName": "Adit Katiyar",
+    "fromEmail": "aaditkatiyar@gmail.com",
+    "replyTo": "aaditkatiyar@gmail.com"
+  },
+  "deliverability": {
+    "includeListUnsubscribe": true,
+    "useHtmlAlternative": true
   },
   "llm": {
     "model": "gpt-4o-mini",
@@ -29,5 +34,5 @@
     "minSeconds": 30,
     "maxSeconds": 120
   },
-  "emailSubject": "Application for {{JOB_ROLE}} Position at {{COMPANY_NAME}}"
+  "emailSubject": "Junior Software Engineer at {{COMPANY_NAME}}"
 }

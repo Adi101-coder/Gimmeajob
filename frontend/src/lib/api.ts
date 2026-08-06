@@ -127,4 +127,10 @@ export const api = {
       '/test-email',
       { method: 'POST', body: JSON.stringify(input) }
     ),
+  getDeliverability: () =>
+    fetchApi<{
+      score: number;
+      issues: Array<{ level: string; message: string; fix: string }>;
+      recommendations: string[];
+    }>('/deliverability'),
 };

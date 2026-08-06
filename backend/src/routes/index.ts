@@ -4,6 +4,7 @@ import { configService } from '../services/config.service.js';
 import { logService } from '../services/log.service.js';
 import { excelParserService } from '../services/excel-parser.service.js';
 import { testEmailService } from '../services/test-email.service.js';
+import { validateDeliverability } from '../utils/email-deliverability.js';
 import { CreateCampaignSchema, LogQuerySchema, TestEmailSchema } from '../types/index.js';
 import { asyncHandler } from '../middleware/error.middleware.js';
 
@@ -141,6 +142,15 @@ router.post(
       messageId: result.messageId,
       attachedResume: result.attachedResume,
     });
+  })
+);
+
+router.get(
+  '/deliverability',
+  asyncHandler(async (_req, res) => {
+    const config = await configService.loadConfig();
+    const report = validateDeliverability(config);
+    res.json(report);
   })
 );
 

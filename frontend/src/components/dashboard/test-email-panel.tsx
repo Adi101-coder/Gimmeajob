@@ -4,13 +4,16 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { Mail, Send } from 'lucide-react';
 
-export function TestEmailPanel() {
+interface TestEmailPanelProps {
+  compact?: boolean;
+}
+
+export function TestEmailPanel({ compact = false }: TestEmailPanelProps) {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [attachResume, setAttachResume] = useState(true);
@@ -20,7 +23,7 @@ export function TestEmailPanel() {
     onSuccess: (data) => {
       toast({
         title: 'Test email sent',
-        description: `Delivered to ${data.to}${data.attachedResume ? ' with resume attached' : ''}.`,
+        description: `Check inbox for ${data.to}`,
       });
     },
     onError: (err: Error) => {
@@ -35,11 +38,48 @@ export function TestEmailPanel() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
-      toast({ title: 'Enter an email address', variant: 'destructive' });
+      toast({ title: 'Enter a test email address', variant: 'destructive' });
       return;
     }
     mutation.mutate();
   };
+
+  if (compact) {
+    return (
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-4 py-4 sm:flex-row sm:items-center"
+      >
+        <div className="flex items-center gap-2 shrink-0 text-sm font-medium">
+          <Mail className="h-4 w-4 text-primary" />
+          Test SMTP
+        </div>
+        <Input
+          type="email"
+          placeholder="Enter testing mail e.g. yourname@gmail.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={mutation.isPending}
+          className="h-10 flex-1 rounded-full border-primary/20 bg-card"
+        />
+        <Button
+          type="submit"
+          size="sm"
+          disabled={mutation.isPending || !email.trim()}
+          className="shrink-0 gap-2 rounded-full px-5"
+        >
+          <Send className="h-4 w-4" />
+          {mutation.isPending ? 'Sending...' : 'Send test'}
+        </Button>
+        <p className="text-xs text-muted-foreground sm:col-span-full">
+          Resume attached by default
+        </p>
+        {mutation.isSuccess && (
+          <p className="text-xs text-emerald-600 sm:col-span-full">Sent — check inbox & spam</p>
+        )}
+      </form>
+    );
+  }
 
   return (
     <div className="rounded-3xl bg-card p-6 shadow-soft">
@@ -50,26 +90,19 @@ export function TestEmailPanel() {
         <div>
           <h3 className="text-base font-semibold">Send test email</h3>
           <p className="text-sm text-muted-foreground">
-            Send a one-off email to verify SMTP is working before starting a campaign
+            Verify Gmail SMTP before starting a campaign
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="testEmail">Recipient email</Label>
-          <Input
-            id="testEmail"
-            type="email"
-            placeholder="your.email@gmail.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={mutation.isPending}
-          />
-          <p className="text-xs text-muted-foreground">
-            Tip: send to yourself first to confirm delivery and check spam folder
-          </p>
-        </div>
+        <Input
+          type="email"
+          placeholder="Enter testing mail e.g. yourname@gmail.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={mutation.isPending}
+        />
 
         <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3">
           <input
@@ -79,10 +112,7 @@ export function TestEmailPanel() {
             disabled={mutation.isPending}
             className="h-4 w-4 rounded accent-primary"
           />
-          <div>
-            <p className="text-sm font-medium">Attach resume</p>
-            <p className="text-xs text-muted-foreground">Also tests Resume.pdf attachment</p>
-          </div>
+          <span className="text-sm">Attach resume with test email</span>
         </label>
 
         <Button type="submit" disabled={mutation.isPending || !email.trim()} className="gap-2">

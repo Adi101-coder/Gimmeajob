@@ -8,6 +8,7 @@ import { CampaignHeader, CampaignFormPanel } from '@/components/dashboard/campai
 import { EmailPreview } from '@/components/dashboard/email-preview';
 import { FilterBar, LogsPanelWrapper } from '@/components/dashboard/logs-panel';
 import { SettingsPanel } from '@/components/dashboard/settings-panel';
+import { TestEmailPanel } from '@/components/dashboard/test-email-panel';
 import { Toaster } from '@/components/ui/use-toast';
 import type { EmailLog } from '@/lib/api';
 
@@ -41,6 +42,8 @@ export function Dashboard() {
               <CampaignHeader showForm={showForm} onToggleForm={() => setShowForm((v) => !v)} />
 
               {showForm && <CampaignFormPanel />}
+
+              <TestEmailPanel compact />
 
               <StatsCards />
 

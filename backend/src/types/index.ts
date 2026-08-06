@@ -19,7 +19,14 @@ export const AppConfigSchema = z.object({
     secure: z.boolean(),
     fromName: z.string().min(1),
     fromEmail: z.string().email(),
+    replyTo: z.string().email().optional(),
   }),
+  deliverability: z
+    .object({
+      includeListUnsubscribe: z.boolean().default(true),
+      useHtmlAlternative: z.boolean().default(true),
+    })
+    .optional(),
   llm: z.object({
     model: z.string().min(1),
     temperature: z.number().min(0).max(2),

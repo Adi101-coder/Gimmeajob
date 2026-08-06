@@ -3,6 +3,11 @@ import type Transporter from 'nodemailer/lib/mailer/index.js';
 import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
 import type { AppConfig } from '../types/index.js';
+import {
+  buildDeliverabilityHeaders,
+  getReplyTo,
+  textToHtml,
+} from '../utils/email-deliverability.js';
 
 export interface SendEmailOptions {
   to: string;
@@ -40,6 +45,9 @@ export class EmailService {
         user: env.smtpUser,
         pass: env.smtpPassword,
       },
+      tls: {
+        minVersion: 'TLSv1.2',
+      },
     });
     this.lastConfigHash = configHash;
     return this.transporter;
@@ -64,14 +72,33 @@ export class EmailService {
       };
     }
 
+    if (config.smtp.fromEmail.toLowerCase() !== env.smtpUser.toLowerCase()) {
+      return {
+        success: false,
+        error: `fromEmail (${config.smtp.fromEmail}) must match SMTP_USER (${env.smtpUser}) for Gmail deliverability`,
+      };
+    }
+
     try {
       const transport = this.buildTransporter(config);
+      const replyTo = getReplyTo(config);
+      const useHtml = config.deliverability?.useHtmlAlternative !== false;
+
       const mailOptions: nodemailer.SendMailOptions = {
-        from: `"${config.smtp.fromName}" <${config.smtp.fromEmail}>`,
+        from: {
+          name: config.smtp.fromName,
+          address: config.smtp.fromEmail,
+        },
         to: options.to,
+        replyTo,
         subject: options.subject,
         text: options.body,
+        headers: buildDeliverabilityHeaders(config),
       };
+
+      if (useHtml) {
+        mailOptions.html = textToHtml(options.body);
+      }
 
       if (options.attachment) {
         mailOptions.attachments = [
