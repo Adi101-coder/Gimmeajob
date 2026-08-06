@@ -3,7 +3,8 @@ import { campaignService } from '../services/campaign.service.js';
 import { configService } from '../services/config.service.js';
 import { logService } from '../services/log.service.js';
 import { excelParserService } from '../services/excel-parser.service.js';
-import { CreateCampaignSchema, LogQuerySchema } from '../types/index.js';
+import { testEmailService } from '../services/test-email.service.js';
+import { CreateCampaignSchema, LogQuerySchema, TestEmailSchema } from '../types/index.js';
 import { asyncHandler } from '../middleware/error.middleware.js';
 
 const router = Router();
@@ -117,6 +118,29 @@ router.get(
     const query = LogQuerySchema.parse(req.query);
     const result = await logService.searchLogs(query);
     res.json(result);
+  })
+);
+
+router.post(
+  '/test-email',
+  asyncHandler(async (req, res) => {
+    const input = TestEmailSchema.parse(req.body);
+    const result = await testEmailService.sendTestEmail(input.to, input.attachResume);
+
+    if (!result.success) {
+      res.status(502).json({
+        error: result.error ?? 'Failed to send test email',
+        attachedResume: result.attachedResume,
+      });
+      return;
+    }
+
+    res.json({
+      message: 'Test email sent successfully',
+      to: input.to,
+      messageId: result.messageId,
+      attachedResume: result.attachedResume,
+    });
   })
 );
 

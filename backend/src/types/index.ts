@@ -56,6 +56,13 @@ export const LogQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
 });
 
+export const TestEmailSchema = z.object({
+  to: z.string().email('Enter a valid email address'),
+  attachResume: z.boolean().optional().default(true),
+});
+
+export type TestEmailInput = z.infer<typeof TestEmailSchema>;
+
 export interface ExcelRow {
   Name: string;
   Company: string;

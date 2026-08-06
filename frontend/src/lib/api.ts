@@ -122,4 +122,9 @@ export const api = {
       duplicateRows: number;
       errors: Array<{ row: number; reason: string; email?: string }>;
     }>('/import-report'),
+  sendTestEmail: (input: { to: string; attachResume?: boolean }) =>
+    fetchApi<{ message: string; to: string; messageId?: string; attachedResume: boolean }>(
+      '/test-email',
+      { method: 'POST', body: JSON.stringify(input) }
+    ),
 };
