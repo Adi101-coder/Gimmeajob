@@ -31,6 +31,12 @@ function resolveProjectRoot(): string {
 
 const projectRoot = resolveProjectRoot();
 
+function resolvePath(configured: string | undefined, defaultRelative: string): string {
+  if (!configured) return path.join(projectRoot, defaultRelative);
+  if (path.isAbsolute(configured)) return configured;
+  return path.resolve(projectRoot, configured.replace(/^\.\//, ''));
+}
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: parseInt(process.env.PORT ?? '4000', 10),
@@ -41,11 +47,11 @@ export const env = {
   smtpPassword: process.env.SMTP_PASSWORD ?? '',
   openaiApiKey: process.env.OPENAI_API_KEY ?? '',
   llmProvider: process.env.LLM_PROVIDER ?? 'openai',
-  dataDir: process.env.DATA_DIR ?? path.join(projectRoot, 'data'),
-  templatesDir: process.env.TEMPLATES_DIR ?? path.join(projectRoot, 'templates'),
-  resumesDir: process.env.RESUMES_DIR ?? path.join(projectRoot, 'resumes'),
-  configPath: process.env.CONFIG_PATH ?? path.join(projectRoot, 'config', 'config.json'),
-  logsDir: process.env.LOGS_DIR ?? path.join(projectRoot, 'logs'),
+  dataDir: resolvePath(process.env.DATA_DIR, 'data'),
+  templatesDir: resolvePath(process.env.TEMPLATES_DIR, 'templates'),
+  resumesDir: resolvePath(process.env.RESUMES_DIR, 'resumes'),
+  configPath: resolvePath(process.env.CONFIG_PATH, path.join('config', 'config.json')),
+  logsDir: resolvePath(process.env.LOGS_DIR, 'logs'),
   projectRoot,
 };
 
