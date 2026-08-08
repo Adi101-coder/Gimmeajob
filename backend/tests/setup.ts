@@ -13,3 +13,4 @@ process.env.RESUMES_DIR = path.join(projectRoot, 'resumes');
 process.env.LOGS_DIR = path.join(projectRoot, 'logs');
 process.env.DATABASE_URL = process.env.DATABASE_URL ?? 'postgresql://test:test@localhost:5432/test';
 process.env.REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
+process.env.EMAIL_PROVIDER = process.env.EMAIL_PROVIDER ?? 'smtp';

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   buildHumanTestEmail,
   buildResumeFilename,
@@ -27,6 +27,10 @@ const baseConfig: AppConfig = {
 };
 
 describe('email-deliverability', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('should build human-like test email without spam words', () => {
     const { subject, body } = buildHumanTestEmail('Adit Katiyar');
     expect(subject).not.toMatch(/test|smtp|verify/i);
@@ -46,8 +50,21 @@ describe('email-deliverability', () => {
   });
 
   it('should flag gmail bulk sending warnings', () => {
+    vi.stubEnv('EMAIL_PROVIDER', 'smtp');
     const report = validateDeliverability(baseConfig);
     expect(report.issues.some((i) => i.message.includes('Gmail'))).toBe(true);
     expect(report.score).toBeGreaterThan(0);
+  });
+
+  it('should validate resend configuration', () => {
+    vi.stubEnv('EMAIL_PROVIDER', 'resend');
+    vi.stubEnv('RESEND_API_KEY', 're_test');
+
+    const report = validateDeliverability({
+      ...baseConfig,
+      smtp: { ...baseConfig.smtp, fromEmail: 'onboarding@resend.dev' },
+    });
+
+    expect(report.issues.some((i) => i.message.includes('Resend test sender'))).toBe(true);
   });
 });

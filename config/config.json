@@ -14,7 +14,7 @@
     "port": 587,
     "secure": false,
     "fromName": "Adit Katiyar",
-    "fromEmail": "aaditkatiyar@gmail.com",
+    "fromEmail": "onboarding@resend.dev",
     "replyTo": "aaditkatiyar@gmail.com"
   },
   "deliverability": {

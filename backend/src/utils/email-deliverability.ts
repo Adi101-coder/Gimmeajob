@@ -55,38 +55,59 @@ export function buildDeliverabilityHeaders(config: AppConfig): Record<string, st
 export function validateDeliverability(config: AppConfig): DeliverabilityReport {
   const issues: DeliverabilityIssue[] = [];
   const recommendations: string[] = [];
+  const usesResend = (process.env.EMAIL_PROVIDER ?? env.emailProvider ?? 'smtp').toLowerCase() === 'resend';
+  const resendApiKey = process.env.RESEND_API_KEY ?? env.resendApiKey;
 
-  if (!env.smtpUser || !env.smtpPassword) {
-    issues.push({
-      level: 'error',
-      message: 'SMTP credentials not configured',
-      fix: 'Set SMTP_USER and SMTP_PASSWORD in .env',
-    });
-  }
+  if (usesResend) {
+    if (!resendApiKey) {
+      issues.push({
+        level: 'error',
+        message: 'Resend API key not configured',
+        fix: 'Set RESEND_API_KEY in .env',
+      });
+    }
 
-  if (env.smtpUser && config.smtp.fromEmail.toLowerCase() !== env.smtpUser.toLowerCase()) {
-    issues.push({
-      level: 'error',
-      message: 'fromEmail does not match SMTP_USER',
-      fix: `Set config.json smtp.fromEmail to ${env.smtpUser}`,
-    });
-  }
+    if (config.smtp.fromEmail.endsWith('@resend.dev')) {
+      issues.push({
+        level: 'warning',
+        message: 'Using Resend test sender (onboarding@resend.dev)',
+        fix: 'Verify your own domain in Resend and update smtp.fromEmail before sending campaigns',
+      });
+      recommendations.push('Test sender only delivers to your Resend account email until a domain is verified');
+    }
+  } else {
+    if (!env.smtpUser || !env.smtpPassword) {
+      issues.push({
+        level: 'error',
+        message: 'SMTP credentials not configured',
+        fix: 'Set SMTP_USER and SMTP_PASSWORD in .env',
+      });
+    }
 
-  if (config.smtp.fromEmail.endsWith('@gmail.com') && config.dailyEmailLimit > 50) {
-    issues.push({
-      level: 'warning',
-      message: 'High daily limit for personal Gmail',
-      fix: 'Keep dailyEmailLimit at 20 or below to reduce spam flags',
-    });
-  }
+    if (env.smtpUser && config.smtp.fromEmail.toLowerCase() !== env.smtpUser.toLowerCase()) {
+      issues.push({
+        level: 'error',
+        message: 'fromEmail does not match SMTP_USER',
+        fix: `Set config.json smtp.fromEmail to ${env.smtpUser}`,
+      });
+    }
 
-  if (config.smtp.fromEmail.endsWith('@gmail.com')) {
-    issues.push({
-      level: 'warning',
-      message: 'Sending campaigns from personal Gmail',
-      fix: 'Use a custom domain with SPF, DKIM, and DMARC for better inbox placement',
-    });
-    recommendations.push('Consider Google Workspace or SendGrid with your own domain');
+    if (config.smtp.fromEmail.endsWith('@gmail.com') && config.dailyEmailLimit > 50) {
+      issues.push({
+        level: 'warning',
+        message: 'High daily limit for personal Gmail',
+        fix: 'Keep dailyEmailLimit at 20 or below to reduce spam flags',
+      });
+    }
+
+    if (config.smtp.fromEmail.endsWith('@gmail.com')) {
+      issues.push({
+        level: 'warning',
+        message: 'Sending campaigns from personal Gmail',
+        fix: 'Use a custom domain with SPF, DKIM, and DMARC for better inbox placement',
+      });
+      recommendations.push('Consider Google Workspace or SendGrid with your own domain');
+    }
   }
 
   if (!config.smtp.fromName || config.smtp.fromName.length < 2) {

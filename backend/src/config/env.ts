@@ -43,6 +43,8 @@ export const env = {
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
   databaseUrl: process.env.DATABASE_URL ?? '',
   redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
+  emailProvider: (process.env.EMAIL_PROVIDER ?? 'smtp').toLowerCase(),
+  resendApiKey: process.env.RESEND_API_KEY ?? '',
   smtpUser: process.env.SMTP_USER ?? '',
   smtpPassword: process.env.SMTP_PASSWORD ?? '',
   openaiApiKey: process.env.OPENAI_API_KEY ?? '',

@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import type Transporter from 'nodemailer/lib/mailer/index.js';
+import { Resend } from 'resend';
 import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
 import type { AppConfig } from '../types/index.js';
@@ -30,6 +31,18 @@ export interface SendEmailResult {
 export class EmailService {
   private transporter: Transporter | null = null;
   private lastConfigHash: string = '';
+  private resendClient: Resend | null = null;
+
+  private usesResend(): boolean {
+    return env.emailProvider === 'resend';
+  }
+
+  private getResendClient(): Resend {
+    if (!this.resendClient) {
+      this.resendClient = new Resend(env.resendApiKey);
+    }
+    return this.resendClient;
+  }
 
   private buildTransporter(config: AppConfig): Transporter {
     const configHash = JSON.stringify({ smtp: config.smtp, user: env.smtpUser });
@@ -53,9 +66,17 @@ export class EmailService {
     return this.transporter;
   }
 
-  async verifyConnection(config: AppConfig): Promise<boolean> {
+  private formatFromAddress(config: AppConfig): string {
+    return `${config.smtp.fromName} <${config.smtp.fromEmail}>`;
+  }
+
+  async verifyConnection(_config: AppConfig): Promise<boolean> {
+    if (this.usesResend()) {
+      return Boolean(env.resendApiKey);
+    }
+
     try {
-      const transport = this.buildTransporter(config);
+      const transport = this.buildTransporter(_config);
       await transport.verify();
       return true;
     } catch (error) {
@@ -64,7 +85,66 @@ export class EmailService {
     }
   }
 
-  async sendEmail(config: AppConfig, options: SendEmailOptions): Promise<SendEmailResult> {
+  private async sendViaResend(
+    config: AppConfig,
+    options: SendEmailOptions
+  ): Promise<SendEmailResult> {
+    if (!env.resendApiKey) {
+      return {
+        success: false,
+        error: 'Resend API key not configured. Set RESEND_API_KEY in environment.',
+      };
+    }
+
+    try {
+      const resend = this.getResendClient();
+      const replyTo = getReplyTo(config);
+      const useHtml = config.deliverability?.useHtmlAlternative !== false;
+
+      const { data, error } = await resend.emails.send({
+        from: this.formatFromAddress(config),
+        to: options.to,
+        replyTo,
+        subject: options.subject,
+        text: options.body,
+        html: useHtml ? textToHtml(options.body) : undefined,
+        headers: buildDeliverabilityHeaders(config),
+        attachments: options.attachment
+          ? [
+              {
+                filename: options.attachment.filename,
+                content: options.attachment.content,
+              },
+            ]
+          : undefined,
+      });
+
+      if (error) {
+        logger.error('Failed to send email via Resend', { to: options.to, error: error.message });
+        return { success: false, error: error.message };
+      }
+
+      logger.info('Email sent successfully via Resend', {
+        to: options.to,
+        messageId: data?.id,
+      });
+
+      return {
+        success: true,
+        messageId: data?.id,
+        response: 'Sent via Resend',
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown Resend error';
+      logger.error('Failed to send email via Resend', { to: options.to, error: message });
+      return { success: false, error: message };
+    }
+  }
+
+  private async sendViaSmtp(
+    config: AppConfig,
+    options: SendEmailOptions
+  ): Promise<SendEmailResult> {
     if (!env.smtpUser || !env.smtpPassword) {
       return {
         success: false,
@@ -129,6 +209,13 @@ export class EmailService {
     }
   }
 
+  async sendEmail(config: AppConfig, options: SendEmailOptions): Promise<SendEmailResult> {
+    if (this.usesResend()) {
+      return this.sendViaResend(config, options);
+    }
+    return this.sendViaSmtp(config, options);
+  }
+
   isTemporaryFailure(error: string): boolean {
     const temporaryPatterns = [
       /timeout/i,
@@ -142,11 +229,15 @@ export class EmailService {
       /temporary/i,
       /rate limit/i,
       /too many/i,
+      /429/i,
     ];
     return temporaryPatterns.some((pattern) => pattern.test(error));
   }
 
   isConfigured(): boolean {
+    if (this.usesResend()) {
+      return Boolean(env.resendApiKey);
+    }
     return Boolean(env.smtpUser && env.smtpPassword);
   }
 }
