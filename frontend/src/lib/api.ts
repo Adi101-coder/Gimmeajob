@@ -1,10 +1,12 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+const API_SECRET = process.env.NEXT_PUBLIC_API_SECRET || '';
 
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      'x-api-key': API_SECRET,
       ...options?.headers,
     },
   });

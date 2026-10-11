@@ -1,3 +1,4 @@
+import { env, paths } from '../config/env.js';
 import { prisma } from '../config/database.js';
 import { configService } from './config.service.js';
 import { excelParserService } from './excel-parser.service.js';
@@ -79,7 +80,7 @@ export class SchedulerService {
     return times;
   }
 
-  async syncContacts(): Promise<number> {
+  async syncContacts(): Promise<string[]> {
     const result = await excelParserService.parseFile();
 
     await prisma.importReport.create({
@@ -91,6 +92,8 @@ export class SchedulerService {
         errors: result.errors as object[],
       },
     });
+
+    const currentEmails = result.contacts.map((contact) => contact.email);
 
     for (const contact of result.contacts) {
       await prisma.contact.upsert({
@@ -111,7 +114,16 @@ export class SchedulerService {
       });
     }
 
-    return result.validRows;
+    if (currentEmails.length === 0) {
+      await prisma.contact.updateMany({ data: { isValid: false } });
+    } else {
+      await prisma.contact.updateMany({
+        where: { email: { notIn: currentEmails } },
+        data: { isValid: false },
+      });
+    }
+
+    return currentEmails;
   }
 }
 
@@ -193,12 +205,31 @@ export class CampaignService {
 
     await this.validatePrerequisites();
 
-    const contactCount = await this.scheduler.syncContacts();
-    if (contactCount === 0) {
+    const currentEmails = await this.scheduler.syncContacts();
+    if (currentEmails.length === 0) {
       throw new Error('No valid contacts found in Excel file');
     }
 
-    const contacts = await prisma.contact.findMany({ where: { isValid: true } });
+    const sheetContacts = await prisma.contact.findMany({
+      where: { isValid: true, email: { in: currentEmails } },
+    });
+
+    const alreadySent = await prisma.emailLog.findMany({
+      where: {
+        status: LogStatus.SUCCESS,
+        contactId: { in: sheetContacts.map((contact) => contact.id) },
+      },
+      select: { contactId: true },
+      distinct: ['contactId'],
+    });
+    const alreadySentIds = new Set(alreadySent.map((log) => log.contactId));
+    const contacts = sheetContacts.filter((contact) => !alreadySentIds.has(contact.id));
+
+    if (contacts.length === 0) {
+      throw new Error(
+        'No new contacts to email. Everyone in the current spreadsheet has already been emailed.'
+      );
+    }
 
     const dailyLimit = input.dailyLimit ?? config.dailyEmailLimit;
     const scheduledDate = input.scheduledDate ? new Date(input.scheduledDate) : null;
@@ -377,14 +408,14 @@ export class CampaignService {
     if (!campaign) {
       const contact = await prisma.contact.findFirst({ where: { isValid: true } });
       const previewContact = contact ?? {
-        name: 'Hiring Manager',
+        name: 'Recruiter',
         email: 'recruiter@example.com',
-        company: 'Sample Company',
+        company: 'your company',
         position: 'Recruiter',
       };
 
       const template = await templateService.loadTemplate(true);
-      const variables = templateService.buildVariables(previewContact, 'Junior Software Engineer');
+      const variables = templateService.buildVariables(previewContact, 'Full Stack Developer');
       const rendered = templateService.renderTemplate(template, variables);
       const subject = templateService.renderSubject(config.emailSubject, variables);
 
@@ -394,7 +425,7 @@ export class CampaignService {
             recruiterName: previewContact.name,
             company: previewContact.company,
             recruiterPosition: previewContact.position,
-            targetRole: 'Junior Software Engineer',
+            targetRole: 'Full Stack Developer',
             template: rendered,
           },
           config
@@ -462,9 +493,9 @@ export class CampaignService {
     ]);
 
     const errors: string[] = [];
-    if (!excelExists) errors.push('Excel file (data/hr_database.xlsx) not found');
+    if (!excelExists) errors.push(`Excel file (${paths.excelFile()}) not found`);
     if (!templateExists) errors.push('Email template (templates/email_template.txt) not found');
-    if (!resumeExists) errors.push('Resume (resumes/Resume.pdf) not found');
+    if (!resumeExists) errors.push(`Resume (resumes/${env.resumeFilename}) not found`);
 
     if (errors.length > 0) {
       throw new Error(errors.join('; '));

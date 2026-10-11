@@ -8,6 +8,10 @@ RUN npm ci
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY frontend/ ./
+ARG NEXT_PUBLIC_API_URL=http://localhost:4000/api
+ARG NEXT_PUBLIC_API_SECRET
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_SECRET=$NEXT_PUBLIC_API_SECRET
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 

@@ -2,7 +2,7 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const XLSX = require('xlsx');
 
-const wb = XLSX.readFile('../data/hr_database.xlsx');
+const wb = XLSX.readFile('../database/daata.xlsx');
 const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

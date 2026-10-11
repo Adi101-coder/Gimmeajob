@@ -69,11 +69,10 @@ export function validateDeliverability(config: AppConfig): DeliverabilityReport 
 
     if (config.smtp.fromEmail.endsWith('@resend.dev')) {
       issues.push({
-        level: 'warning',
+        level: 'error',
         message: 'Using Resend test sender (onboarding@resend.dev)',
-        fix: 'Verify your own domain in Resend and update smtp.fromEmail before sending campaigns',
+        fix: 'Verify your own domain in Resend and set smtp.fromEmail to an address on that domain. Sandbox mail only reaches the Resend account owner.',
       });
-      recommendations.push('Test sender only delivers to your Resend account email until a domain is verified');
     }
   } else {
     if (!env.smtpUser || !env.smtpPassword) {
@@ -86,9 +85,9 @@ export function validateDeliverability(config: AppConfig): DeliverabilityReport 
 
     if (env.smtpUser && config.smtp.fromEmail.toLowerCase() !== env.smtpUser.toLowerCase()) {
       issues.push({
-        level: 'error',
-        message: 'fromEmail does not match SMTP_USER',
-        fix: `Set config.json smtp.fromEmail to ${env.smtpUser}`,
+        level: 'info',
+        message: `SMTP sends from ${env.smtpUser}, not ${config.smtp.fromEmail}`,
+        fix: `Set smtp.fromEmail to ${env.smtpUser} so previews match the mailbox that actually sends`,
       });
     }
 

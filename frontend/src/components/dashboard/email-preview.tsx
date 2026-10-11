@@ -108,7 +108,7 @@ export function EmailPreview({ selectedLog }: EmailPreviewProps) {
               </button>
             </div>
             {!selectedLog && (
-              <p className="text-xs text-white/40">Resume.pdf attached automatically</p>
+              <p className="text-xs text-white/40">proof.pdf attached automatically</p>
             )}
             {selectedLog && display.sentAt && (
               <p className="text-xs text-white/40">{formatDate(display.sentAt)}</p>

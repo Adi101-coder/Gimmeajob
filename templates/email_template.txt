@@ -1,15 +1,16 @@
-Hi {{HR_NAME}},
+Not gonna waste your time with a cover-letter voice, I was on Reddit, saw something crazzzy, had to tell, your company came up in a thread about hiring, I figured I'd email a real person instead of becoming application #847 in a portal.
 
-I won't take much of your time, I know it's valuable.
+Hey, I'm reaching out for the {{JOB_ROLE}} role at your workplace.
 
-I'm a developer actively looking for a {{JOB_ROLE}} role, and {{COMPANY_NAME}} is one of the places I'd genuinely love to be at. I've spent the last 3 years working hands-on with AI agents, debugging tricky problems, shipping features, and picking up new tools quickly whenever something needs to get done.
+Over the last 3 years, I've focused on AI agents and shipping real-world products, from building automated email deliverability systems and launching an iOS app independently to building PolySplit.io. I've collaborated with multiple founders, delivered projects under tight deadlines, presented research at conferences, and won multiple hackathons.
 
-Honestly, I just love solving problems and building things. I'm comfortable communicating with people, I don't mind putting in the extra hours when it matters, and I try to work smart so tasks don't take longer than they need to. I also have a fair interest in marketing, so I'm not only thinking in code.
+I take ownership, move fast, and build things that solve real problems. My work has also contributed to roughly $40K in additional startup profit.
 
-I've attached my resume if you'd like to take a look. If you feel there could be a fit at {{COMPANY_NAME}}, I'd be happy to connect whenever works for you.
+I'd love to build something meaningful with your team. Give me a real problem or technical challenge, and let me prove what I bring to the table.
+
+hope u have a good day
 
 Best regards,
 Adit Katiyar
 Email: aaditkatiyar@gmail.com
-LinkedIn: https://www.linkedin.com/in/adit-katiyar-0863692b9/
-Portfolio: https://www.aditkatiyar.tech/
+Portfolio: https://aditkatiyar.com

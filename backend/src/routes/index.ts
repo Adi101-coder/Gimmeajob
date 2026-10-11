@@ -7,6 +7,7 @@ import { testEmailService } from '../services/test-email.service.js';
 import { validateDeliverability } from '../utils/email-deliverability.js';
 import { CreateCampaignSchema, LogQuerySchema, TestEmailSchema } from '../types/index.js';
 import { asyncHandler } from '../middleware/error.middleware.js';
+import { requireApiKey } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
@@ -23,6 +24,8 @@ router.get(
     res.status(statusCode).json(health);
   })
 );
+
+router.use(requireApiKey);
 
 router.get(
   '/dashboard',

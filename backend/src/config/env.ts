@@ -9,14 +9,16 @@ const possibleRoots = [
   path.resolve(backendRoot, '../..'),
 ];
 
-for (const root of possibleRoots) {
-  const envPath = path.join(root, '.env');
-  if (fs.existsSync(envPath)) {
-    dotenv.config({ path: envPath });
-    break;
+if (process.env.NODE_ENV !== 'test') {
+  for (const root of possibleRoots) {
+    const envPath = path.join(root, '.env');
+    if (fs.existsSync(envPath)) {
+      dotenv.config({ path: envPath, override: true });
+      break;
+    }
   }
+  dotenv.config();
 }
-dotenv.config();
 
 function resolveProjectRoot(): string {
   if (process.env.PROJECT_ROOT) return process.env.PROJECT_ROOT;
@@ -48,17 +50,19 @@ export const env = {
   smtpUser: process.env.SMTP_USER ?? '',
   smtpPassword: process.env.SMTP_PASSWORD ?? '',
   openaiApiKey: process.env.OPENAI_API_KEY ?? '',
+  apiSecret: process.env.API_SECRET ?? '',
   llmProvider: process.env.LLM_PROVIDER ?? 'openai',
   dataDir: resolvePath(process.env.DATA_DIR, 'data'),
   templatesDir: resolvePath(process.env.TEMPLATES_DIR, 'templates'),
   resumesDir: resolvePath(process.env.RESUMES_DIR, 'resumes'),
   configPath: resolvePath(process.env.CONFIG_PATH, path.join('config', 'config.json')),
   logsDir: resolvePath(process.env.LOGS_DIR, 'logs'),
+  resumeFilename: process.env.RESUME_FILENAME ?? 'proof.pdf',
   projectRoot,
 };
 
 export const paths = {
-  excelFile: () => path.join(env.dataDir, 'hr_database.xlsx'),
+  excelFile: () => resolvePath(process.env.HR_EXCEL_PATH, path.join('database', 'daata.xlsx')),
   emailTemplate: () => path.join(env.templatesDir, 'email_template.txt'),
-  resume: () => path.join(env.resumesDir, 'Resume.pdf'),
+  resume: () => path.join(env.resumesDir, env.resumeFilename),
 };

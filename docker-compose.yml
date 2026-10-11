@@ -45,14 +45,17 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      API_SECRET: ${API_SECRET}
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
       DATA_DIR: /app/data
+      HR_EXCEL_PATH: /app/database/daata.xlsx
       TEMPLATES_DIR: /app/templates
       RESUMES_DIR: /app/resumes
       CONFIG_PATH: /app/config/config.json
       LOGS_DIR: /app/logs
     volumes:
       - ../data:/app/data:ro
+      - ../database:/app/database:ro
       - ../templates:/app/templates:ro
       - ../resumes:/app/resumes:ro
       - ../config:/app/config:ro
@@ -75,14 +78,17 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      API_SECRET: ${API_SECRET}
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
       DATA_DIR: /app/data
+      HR_EXCEL_PATH: /app/database/daata.xlsx
       TEMPLATES_DIR: /app/templates
       RESUMES_DIR: /app/resumes
       CONFIG_PATH: /app/config/config.json
       LOGS_DIR: /app/logs
     volumes:
       - ../data:/app/data:ro
+      - ../database:/app/database:ro
       - ../templates:/app/templates:ro
       - ../resumes:/app/resumes:ro
       - ../config:/app/config:ro
@@ -99,11 +105,15 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4000/api
+        NEXT_PUBLIC_API_SECRET: ${API_SECRET}
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:4000/api
+      NEXT_PUBLIC_API_SECRET: ${API_SECRET}
     depends_on:
       - backend
 

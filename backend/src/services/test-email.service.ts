@@ -3,7 +3,6 @@ import { emailService } from './email.service.js';
 import { resumeService } from './resume.service.js';
 import { templateService } from './template.service.js';
 import { logger } from '../config/logger.js';
-import { buildResumeFilename } from '../utils/email-deliverability.js';
 
 export interface TestEmailResult {
   success: boolean;
@@ -18,8 +17,8 @@ export class TestEmailService {
     const config = await configService.loadConfig();
     const template = await templateService.loadTemplate(true);
     const variables = templateService.buildVariables(
-      { name: 'Hiring Manager', company: 'Sample Company', position: 'Recruiter' },
-      'Junior Software Engineer'
+      { name: 'Recruiter', company: 'your company', position: 'Recruiter' },
+      'Full Stack Developer'
     );
     const body = templateService.renderTemplate(template, variables);
     const subject = templateService.renderSubject(config.emailSubject, variables);
@@ -29,7 +28,7 @@ export class TestEmailService {
     if (attachResume) {
       const resume = await resumeService.getResumeBuffer();
       attachment = {
-        filename: buildResumeFilename(config.smtp.fromName),
+        filename: resume.filename,
         content: resume.buffer,
       };
     }

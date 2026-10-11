@@ -159,6 +159,7 @@ Environment variables override sensitive values:
 | `SMTP_USER` | SMTP username |
 | `SMTP_PASSWORD` | SMTP password / app password |
 | `OPENAI_API_KEY` | OpenAI API key |
+| `API_SECRET` | Shared secret required on every `/api` route except `/api/health`. Send it as `x-api-key`. The dashboard reads the same value. |
 | `DATABASE_URL` | PostgreSQL connection string |
 | `REDIS_URL` | Redis connection string |
 

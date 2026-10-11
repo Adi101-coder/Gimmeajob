@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
+import path from 'path';
 import crypto from 'crypto';
-import { paths } from '../config/env.js';
+import { env, paths } from '../config/env.js';
 
 export interface ResumeInfo {
   path: string;
@@ -27,7 +28,7 @@ export class ResumeService {
 
       this.cachedInfo = {
         path: resumePath,
-        filename: 'Resume.pdf',
+        filename: path.basename(resumePath),
         size: stat.size,
         hash,
         lastModified: stat.mtime,
@@ -35,7 +36,9 @@ export class ResumeService {
 
       return this.cachedInfo;
     } catch {
-      throw new Error(`Resume not found at ${resumePath}. Please place Resume.pdf in the resumes folder.`);
+      throw new Error(
+        `Resume not found at ${resumePath}. Please place ${env.resumeFilename} in the resumes folder.`
+      );
     }
   }
 

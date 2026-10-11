@@ -66,8 +66,29 @@ export class EmailService {
     return this.transporter;
   }
 
-  private formatFromAddress(config: AppConfig): string {
-    return `${config.smtp.fromName} <${config.smtp.fromEmail}>`;
+  resolveSender(config: AppConfig): { ok: true; from: string; address: string } | { ok: false; error: string } {
+    const name = config.smtp.fromName;
+
+    if (this.usesResend()) {
+      const address = config.smtp.fromEmail;
+      if (address.toLowerCase().endsWith('@resend.dev')) {
+        return {
+          ok: false,
+          error:
+            'Resend sandbox sender (onboarding@resend.dev) only delivers to the Resend account owner. Set smtp.fromEmail to an address on a domain you verified in Resend.',
+        };
+      }
+      return { ok: true, from: `${name} <${address}>`, address };
+    }
+
+    if (!env.smtpUser) {
+      return {
+        ok: false,
+        error: 'SMTP credentials not configured. Set SMTP_USER and SMTP_PASSWORD in environment.',
+      };
+    }
+
+    return { ok: true, from: `${name} <${env.smtpUser}>`, address: env.smtpUser };
   }
 
   async verifyConnection(_config: AppConfig): Promise<boolean> {
@@ -96,13 +117,18 @@ export class EmailService {
       };
     }
 
+    const sender = this.resolveSender(config);
+    if (!sender.ok) {
+      return { success: false, error: sender.error };
+    }
+
     try {
       const resend = this.getResendClient();
       const replyTo = getReplyTo(config);
       const useHtml = config.deliverability?.useHtmlAlternative !== false;
 
       const { data, error } = await resend.emails.send({
-        from: this.formatFromAddress(config),
+        from: sender.from,
         to: options.to,
         replyTo,
         subject: options.subject,
@@ -152,11 +178,9 @@ export class EmailService {
       };
     }
 
-    if (config.smtp.fromEmail.toLowerCase() !== env.smtpUser.toLowerCase()) {
-      return {
-        success: false,
-        error: `fromEmail (${config.smtp.fromEmail}) must match SMTP_USER (${env.smtpUser}) for Gmail deliverability`,
-      };
+    const sender = this.resolveSender(config);
+    if (!sender.ok) {
+      return { success: false, error: sender.error };
     }
 
     try {
@@ -167,7 +191,7 @@ export class EmailService {
       const mailOptions: nodemailer.SendMailOptions = {
         from: {
           name: config.smtp.fromName,
-          address: config.smtp.fromEmail,
+          address: sender.address,
         },
         to: options.to,
         replyTo,

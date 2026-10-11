@@ -16,6 +16,7 @@ function createTestApp() {
 
 describe('API Integration', () => {
   const app = createTestApp();
+  const authed = () => ({ 'x-api-key': 'test-secret' });
 
   it('GET /api/health should return health status', async () => {
     const res = await request(app).get('/api/health');
@@ -28,7 +29,7 @@ describe('API Integration', () => {
   });
 
   it('GET /api/config should return configuration', async () => {
-    const res = await request(app).get('/api/config');
+    const res = await request(app).get('/api/config').set(authed());
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('dailyEmailLimit');
     expect(res.body).toHaveProperty('smtp');
@@ -37,7 +38,7 @@ describe('API Integration', () => {
   });
 
   it('GET /api/import-report should return excel parse result', async () => {
-    const res = await request(app).get('/api/import-report');
+    const res = await request(app).get('/api/import-report').set(authed());
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('validRows');
     expect(res.body).toHaveProperty('errors');
@@ -45,13 +46,13 @@ describe('API Integration', () => {
   });
 
   it('POST /api/campaigns should validate input', async () => {
-    const res = await request(app).post('/api/campaigns').send({});
+    const res = await request(app).post('/api/campaigns').set(authed()).send({});
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error');
   });
 
   it('GET /api/logs should return paginated logs or handle DB unavailable', async () => {
-    const res = await request(app).get('/api/logs');
+    const res = await request(app).get('/api/logs').set(authed());
     if (res.status === 200) {
       expect(res.body).toHaveProperty('logs');
       expect(res.body).toHaveProperty('pagination');

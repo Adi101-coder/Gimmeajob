@@ -14,7 +14,7 @@
     "port": 587,
     "secure": false,
     "fromName": "Adit Katiyar",
-    "fromEmail": "onboarding@resend.dev",
+    "fromEmail": "hello@aditkatiyar.com",
     "replyTo": "aaditkatiyar@gmail.com"
   },
   "deliverability": {
@@ -34,5 +34,5 @@
     "minSeconds": 30,
     "maxSeconds": 120
   },
-  "emailSubject": "Junior Software Engineer at {{COMPANY_NAME}}"
+  "emailSubject": "saw you on reddit, had to reach out"
 }

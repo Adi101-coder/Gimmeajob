@@ -67,7 +67,7 @@ export function CampaignFormPanel({ compact = false }: { compact?: boolean }) {
   const form = useForm<CampaignForm>({
     resolver: zodResolver(campaignSchema),
     defaultValues: {
-      jobRole: '',
+      jobRole: 'Full Stack Developer',
       dailyLimit: undefined,
       mode: 'immediate',
       scheduledDate: new Date().toISOString().split('T')[0],
@@ -131,7 +131,7 @@ export function CampaignFormPanel({ compact = false }: { compact?: boolean }) {
             <Label htmlFor="jobRole">Position applying for</Label>
             <Input
               id="jobRole"
-              placeholder="e.g. Software Engineer"
+              placeholder="e.g. Full Stack Developer"
               disabled={!!isActive}
               {...form.register('jobRole')}
             />

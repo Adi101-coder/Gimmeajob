@@ -9,7 +9,6 @@ import { resumeService } from '../services/resume.service.js';
 import { logService } from '../services/log.service.js';
 import { logger } from '../config/logger.js';
 import { CampaignStatus, LogStatus, QueueItemStatus } from '@prisma/client';
-import { buildResumeFilename } from '../utils/email-deliverability.js';
 
 interface EmailJobData {
   queueItemId: string;
@@ -101,8 +100,7 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
       aiStatus = personalized.status;
     }
 
-    const { buffer } = await resumeService.getResumeBuffer();
-    const filename = buildResumeFilename(config.smtp.fromName);
+    const { buffer, filename } = await resumeService.getResumeBuffer();
 
     let lastError = '';
     let sent = false;

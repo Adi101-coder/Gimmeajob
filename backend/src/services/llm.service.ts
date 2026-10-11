@@ -94,7 +94,9 @@ Write the personalized email body:`;
   }
 
   isConfigured(): boolean {
-    return Boolean(env.openaiApiKey);
+    const key = env.openaiApiKey.trim();
+    if (!key || key.startsWith('sk-your')) return false;
+    return true;
   }
 }
 
