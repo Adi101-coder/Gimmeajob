@@ -20,9 +20,9 @@ project/
 ├── backend/          # Express API + BullMQ worker
 ├── frontend/         # Next.js dashboard
 ├── config/           # config.json settings
-├── data/             # hr_database.xlsx
+├── database/         # daata.xlsx (HR contacts)
 ├── templates/        # email_template.txt
-├── resumes/          # Resume.pdf
+├── resumes/          # proof.pdf (or RESUME_FILENAME)
 ├── logs/             # Application logs
 ├── docker/           # Dockerfiles
 ├── docs/             # Documentation
@@ -54,16 +54,10 @@ Place your files in the predefined folders:
 
 | File | Path |
 |------|------|
-| Recruiter database | `data/hr_database.xlsx` |
+| Recruiter database | `database/daata.xlsx` (set `HR_EXCEL_PATH` in `.env`) |
 | Email template | `templates/email_template.txt` |
-| Resume | `resumes/Resume.pdf` |
+| Resume | `resumes/proof.pdf` (set `RESUME_FILENAME` in `.env`) |
 | Settings | `config/config.json` |
-
-Generate sample data for testing:
-
-```bash
-node scripts/generate-sample-data.mjs
-```
 
 ### 3. Excel format
 
@@ -117,7 +111,7 @@ cp .env.example .env
 
 ### 2. Add your files
 
-Ensure `data/hr_database.xlsx`, `templates/email_template.txt`, and `resumes/Resume.pdf` exist.
+Ensure `database/daata.xlsx`, `templates/email_template.txt`, and your resume PDF exist.
 
 ### 3. Start all services
 
@@ -215,8 +209,8 @@ Tests cover:
 
 | Issue | Solution |
 |-------|----------|
-| "Excel file not found" | Place `hr_database.xlsx` in `data/` |
-| "Resume not found" | Place `Resume.pdf` in `resumes/` |
+| "Excel file not found" | Place your HR spreadsheet at `database/daata.xlsx` or set `HR_EXCEL_PATH` |
+| "Resume not found" | Place your PDF in `resumes/` and set `RESUME_FILENAME` |
 | SMTP auth failed | Use an app-specific password for Gmail |
 | LLM errors | Check `OPENAI_API_KEY`; emails fall back to template |
 | Campaign not sending | Ensure the worker process is running |

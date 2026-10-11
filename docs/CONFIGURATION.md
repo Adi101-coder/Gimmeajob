@@ -8,9 +8,9 @@ GimmeAJob loads all application data from predefined local folders. No file uplo
 
 | File | Location | Description |
 |------|----------|-------------|
-| Recruiter database | `data/hr_database.xlsx` | Excel file with recruiter contacts |
+| Recruiter database | `database/daata.xlsx` | Excel file with recruiter contacts (`HR_EXCEL_PATH`) |
 | Email template | `templates/email_template.txt` | Plain text email template |
-| Resume | `resumes/Resume.pdf` | PDF resume attached to every email |
+| Resume | `resumes/proof.pdf` | PDF resume attached (`RESUME_FILENAME`) |
 | Settings | `config/config.json` | Application configuration |
 
 ## Excel Format
