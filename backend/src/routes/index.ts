@@ -125,6 +125,23 @@ router.get(
   })
 );
 
+router.get(
+  '/logs/summary',
+  asyncHandler(async (_req, res) => {
+    res.json(await logService.getSummary());
+  })
+);
+
+router.get(
+  '/logs/export',
+  asyncHandler(async (_req, res) => {
+    const csv = await logService.exportSuccessCsv();
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="sent-emails.csv"');
+    res.send(csv);
+  })
+);
+
 router.post(
   '/test-email',
   asyncHandler(async (req, res) => {

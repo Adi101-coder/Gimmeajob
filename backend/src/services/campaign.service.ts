@@ -8,6 +8,7 @@ import { llmService } from './llm.service.js';
 import { emailService } from './email.service.js';
 import { logger } from '../config/logger.js';
 import type { AppConfig, CreateCampaignInput, EmailPreview } from '../types/index.js';
+import { emailsRemainingToday, isUnlimitedDailyLimit } from '../utils/daily-limit.js';
 import { CampaignStatus, LogStatus, QueueItemStatus } from '@prisma/client';
 
 function parseTimeToMinutes(time: string): number {
@@ -51,7 +52,10 @@ export class SchedulerService {
       const dayEnd = new Date(currentDay);
       dayEnd.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
 
-      const emailsForDay = Math.min(count - times.length, config.dailyEmailLimit);
+      const dayCap = isUnlimitedDailyLimit(config.dailyEmailLimit)
+        ? count - times.length
+        : config.dailyEmailLimit;
+      const emailsForDay = Math.min(count - times.length, dayCap);
       const intervalMs = (windowMinutes * 60 * 1000) / Math.max(emailsForDay, 1);
 
       for (let i = 0; i < emailsForDay && times.length < count; i++) {
@@ -75,6 +79,22 @@ export class SchedulerService {
       }
 
       currentDay.setDate(currentDay.getDate() + 1);
+    }
+
+    return times;
+  }
+
+  /** Send-now mode: short gaps between emails (randomDelay), no daily cap. */
+  computeImmediateScheduleTimes(count: number, config: AppConfig, startFrom?: Date): Date[] {
+    const now = startFrom ?? new Date();
+    const times: Date[] = [];
+    let cursor = now.getTime();
+
+    for (let i = 0; i < count; i++) {
+      if (times.length > 0) {
+        cursor += randomDelay(config.randomDelay.minSeconds, config.randomDelay.maxSeconds);
+      }
+      times.push(new Date(cursor));
     }
 
     return times;
@@ -134,7 +154,7 @@ export class CampaignService {
     const config = await configService.loadConfig();
     const todayStart = getTodayStart();
 
-    const [activeCampaign, todayLogs, totalContacts, lastImport] = await Promise.all([
+    const [activeCampaign, todayLogs, totalContacts, lastImport, totalSentAllTime] = await Promise.all([
       prisma.campaign.findFirst({
         where: { status: { in: [CampaignStatus.RUNNING, CampaignStatus.PAUSED, CampaignStatus.SCHEDULED] } },
         orderBy: { createdAt: 'desc' },
@@ -144,11 +164,12 @@ export class CampaignService {
       }),
       prisma.contact.count({ where: { isValid: true } }),
       prisma.importReport.findFirst({ orderBy: { createdAt: 'desc' } }),
+      prisma.emailLog.count({ where: { status: LogStatus.SUCCESS } }),
     ]);
 
     const dailyLimit = activeCampaign?.dailyLimit ?? config.dailyEmailLimit;
     const todaySent = activeCampaign?.todaySentCount ?? todayLogs;
-    const emailsRemaining = Math.max(0, dailyLimit - todaySent);
+    const emailsRemaining = emailsRemainingToday(dailyLimit, todaySent);
 
     return {
       activeCampaign: activeCampaign ? this.formatProgress(activeCampaign, emailsRemaining) : null,
@@ -156,6 +177,7 @@ export class CampaignService {
       dailyLimit,
       emailsRemaining,
       totalContacts,
+      totalSentAllTime,
       importReport: lastImport
         ? {
             totalRows: lastImport.totalRows,
@@ -182,7 +204,7 @@ export class CampaignService {
       startedAt: Date | null;
       completedAt: Date | null;
     },
-    emailsRemaining: number
+    emailsRemaining: number | null
   ) {
     return {
       id: campaign.id,
@@ -231,7 +253,7 @@ export class CampaignService {
       );
     }
 
-    const dailyLimit = input.dailyLimit ?? config.dailyEmailLimit;
+    const dailyLimit = config.dailyEmailLimit;
     const scheduledDate = input.scheduledDate ? new Date(input.scheduledDate) : null;
 
     const campaign = await prisma.campaign.create({
@@ -249,10 +271,7 @@ export class CampaignService {
 
     let scheduleTimes: Date[];
     if (input.mode === 'immediate') {
-      scheduleTimes = this.scheduler.computeScheduleTimes(contacts.length, {
-        ...config,
-        dailyEmailLimit: dailyLimit,
-      });
+      scheduleTimes = this.scheduler.computeImmediateScheduleTimes(contacts.length, config);
     } else {
       const startDate = scheduledDate ?? new Date();
       if (input.scheduledTime) {
@@ -346,9 +365,15 @@ export class CampaignService {
     const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
     if (!campaign) throw new Error('Campaign not found');
 
+    const config = await configService.loadConfig();
+
     await prisma.campaign.update({
       where: { id: campaignId },
-      data: { status: CampaignStatus.RUNNING, pausedAt: null },
+      data: {
+        status: CampaignStatus.RUNNING,
+        pausedAt: null,
+        dailyLimit: config.dailyEmailLimit,
+      },
     });
 
     await this.activateCampaign(campaignId);
@@ -388,7 +413,7 @@ export class CampaignService {
     const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
     if (!campaign) throw new Error('Campaign not found');
 
-    const emailsRemaining = Math.max(0, campaign.dailyLimit - campaign.todaySentCount);
+    const emailsRemaining = emailsRemainingToday(campaign.dailyLimit, campaign.todaySentCount);
     return this.formatProgress(campaign, emailsRemaining);
   }
 

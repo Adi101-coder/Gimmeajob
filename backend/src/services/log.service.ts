@@ -74,6 +74,39 @@ export class LogService {
       take: limit,
     });
   }
+
+  async getSummary() {
+    const [totalSuccess, totalFailed, totalRetry] = await Promise.all([
+      prisma.emailLog.count({ where: { status: 'SUCCESS' } }),
+      prisma.emailLog.count({ where: { status: 'FAILED' } }),
+      prisma.emailLog.count({ where: { status: 'RETRY' } }),
+    ]);
+    return { totalSuccess, totalFailed, totalRetry };
+  }
+
+  async exportSuccessCsv(): Promise<string> {
+    const logs = await prisma.emailLog.findMany({
+      where: { status: 'SUCCESS' },
+      orderBy: { sentAt: 'asc' },
+      include: { contact: { select: { name: true, position: true } } },
+    });
+
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const header = 'sentAt,recipient,name,company,position,subject,campaignId,smtpResponse';
+    const rows = logs.map((log) =>
+      [
+        log.sentAt.toISOString(),
+        escape(log.recipient),
+        escape(log.contact?.name ?? ''),
+        escape(log.company),
+        escape(log.contact?.position ?? ''),
+        escape(log.subject ?? ''),
+        log.campaignId,
+        escape(log.smtpResponse ?? ''),
+      ].join(',')
+    );
+    return [header, ...rows].join('\n');
+  }
 }
 
 export const logService = new LogService();

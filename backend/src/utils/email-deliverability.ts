@@ -91,7 +91,11 @@ export function validateDeliverability(config: AppConfig): DeliverabilityReport 
       });
     }
 
-    if (config.smtp.fromEmail.endsWith('@gmail.com') && config.dailyEmailLimit > 50) {
+    if (
+      config.smtp.fromEmail.endsWith('@gmail.com') &&
+      config.dailyEmailLimit > 0 &&
+      config.dailyEmailLimit > 50
+    ) {
       issues.push({
         level: 'warning',
         message: 'High daily limit for personal Gmail',

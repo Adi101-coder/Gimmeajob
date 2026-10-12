@@ -34,7 +34,7 @@ describe('API Integration', () => {
     expect(res.body).toHaveProperty('dailyEmailLimit');
     expect(res.body).toHaveProperty('smtp');
     expect(res.body).toHaveProperty('llm');
-    expect(res.body.dailyEmailLimit).toBeGreaterThan(0);
+    expect(res.body.dailyEmailLimit).toBeGreaterThanOrEqual(0);
   });
 
   it('GET /api/import-report should return excel parse result', async () => {

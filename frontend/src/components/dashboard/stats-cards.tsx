@@ -17,9 +17,27 @@ export function StatsCards() {
     ? Math.round((campaign.sentCount / Math.max(campaign.totalContacts, 1)) * 100)
     : 0;
 
+  const unlimited = (dashboard?.dailyLimit ?? 0) <= 0;
   const kpis = [
-    { label: 'Sent today', value: `${dashboard?.todaySent ?? 0}`, sub: `of ${dashboard?.dailyLimit ?? 0} limit` },
-    { label: 'Remaining today', value: `${dashboard?.emailsRemaining ?? 0}`, sub: 'emails left' },
+    {
+      label: 'Sent today',
+      value: `${dashboard?.todaySent ?? 0}`,
+      sub: unlimited ? 'no daily cap' : `of ${dashboard?.dailyLimit} limit`,
+    },
+    {
+      label: 'Sent all time',
+      value: `${dashboard?.totalSentAllTime ?? 0}`,
+      sub: 'in activity log & CSV',
+    },
+    {
+      label: unlimited ? 'Campaign left' : 'Remaining today',
+      value: unlimited
+        ? campaign
+          ? `${Math.max(0, campaign.totalContacts - campaign.sentCount)}`
+          : '—'
+        : `${dashboard?.emailsRemaining ?? 0}`,
+      sub: unlimited ? 'contacts in queue' : 'emails left',
+    },
     { label: 'Avg. campaign progress', value: campaign ? `${progress}%` : '—', sub: campaign ? campaign.jobRole : 'No active campaign' },
   ];
 
@@ -32,7 +50,7 @@ export function StatsCards() {
     <div className="grid gap-4 lg:grid-cols-2">
       {/* Left — KPI overview */}
       <div className="rounded-3xl bg-card p-6 shadow-soft">
-        <div className="grid grid-cols-3 gap-4 border-b border-border pb-6">
+        <div className="grid grid-cols-2 gap-4 border-b border-border pb-6 lg:grid-cols-4">
           {kpis.map((kpi) => (
             <div key={kpi.label}>
               <p className="text-xs text-muted-foreground">{kpi.label}</p>

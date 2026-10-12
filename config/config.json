@@ -1,5 +1,5 @@
 {
-  "dailyEmailLimit": 20,
+  "dailyEmailLimit": 0,
   "workingHours": {
     "start": "09:00",
     "end": "17:00",

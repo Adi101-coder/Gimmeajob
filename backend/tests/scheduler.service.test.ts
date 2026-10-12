@@ -55,4 +55,21 @@ describe('SchedulerService', () => {
       expect(times[i].getTime()).toBeGreaterThanOrEqual(times[i - 1].getTime() - 60000);
     }
   });
+
+  it('should burst immediate sends with short gaps', () => {
+    const start = new Date('2026-08-06T10:00:00');
+    const times = scheduler.computeImmediateScheduleTimes(3, mockConfig, start);
+    expect(times).toHaveLength(3);
+    const spanMs = times[2].getTime() - times[0].getTime();
+    expect(spanMs).toBeLessThan(30 * 60 * 1000);
+    expect(times[1].getTime()).toBeGreaterThan(times[0].getTime());
+  });
+
+  it('should schedule all spread-mode emails in one day when daily limit is unlimited', () => {
+    const unlimitedConfig = { ...mockConfig, dailyEmailLimit: 0 };
+    const start = new Date('2026-08-06T09:00:00');
+    const times = scheduler.computeScheduleTimes(8, unlimitedConfig, start);
+    expect(times).toHaveLength(8);
+    expect(times.every((t) => t.getDate() === 6)).toBe(true);
+  });
 });

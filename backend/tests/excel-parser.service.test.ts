@@ -60,4 +60,20 @@ describe('ExcelParserService', () => {
   it('should throw when file not found', async () => {
     await expect(service.parseFile('/nonexistent/file.xlsx')).rejects.toThrow('not found');
   });
+
+  it('should mark sent status on matching email row', async () => {
+    const marked = await service.markEmailAsSent('alice@techcorp.com', new Date('2026-01-15T10:00:00.000Z'), TEST_FILE);
+    expect(marked).toBe(true);
+
+    const result = await service.parseFile(TEST_FILE);
+    expect(result.contacts).toHaveLength(2);
+
+    const wb = XLSX.readFile(TEST_FILE);
+    const rows = XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets[wb.SheetNames[0]!], {
+      defval: '',
+    });
+    const alice = rows.find((r) => String(r.Email).toLowerCase() === 'alice@techcorp.com');
+    expect(alice?.Sent).toBe('Yes');
+    expect(alice?.['Sent At']).toBe('2026-01-15T10:00:00.000Z');
+  });
 });

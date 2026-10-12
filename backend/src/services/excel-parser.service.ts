@@ -33,7 +33,69 @@ function isRowEmpty(row: Partial<ExcelRow>): boolean {
   return !row.Name && !row.Company && !row.Position && !row.Email;
 }
 
+const SENT_COLUMN = 'Sent';
+const SENT_AT_COLUMN = 'Sent At';
+
 export class ExcelParserService {
+  private writeLock: Promise<void> = Promise.resolve();
+
+  private async withWriteLock<T>(fn: () => Promise<T>): Promise<T> {
+    const run = this.writeLock.then(fn);
+    this.writeLock = run.then(
+      () => undefined,
+      () => undefined
+    );
+    return run;
+  }
+
+  /** Mark matching spreadsheet row(s) after a successful send. */
+  async markEmailAsSent(email: string, sentAt: Date = new Date(), filePath?: string): Promise<boolean> {
+    return this.withWriteLock(async () => {
+      const targetPath = filePath ?? paths.excelFile();
+      const normalized = normalizeEmail(email);
+
+      try {
+        await fs.access(targetPath);
+      } catch {
+        logger.warn('Excel mark sent skipped — file not found', { path: targetPath, email: normalized });
+        return false;
+      }
+
+      const buffer = await fs.readFile(targetPath);
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      if (!sheetName) {
+        return false;
+      }
+
+      const sheet = workbook.Sheets[sheetName];
+      const rawRows = XLSX.utils.sheet_to_json<RawRow>(sheet, { defval: '' });
+      let marked = 0;
+
+      for (const row of rawRows) {
+        const rowEmail = normalizeEmail(String(row.Email ?? row.email ?? row['E-mail'] ?? ''));
+        if (rowEmail !== normalized) {
+          continue;
+        }
+        row[SENT_COLUMN] = 'Yes';
+        row[SENT_AT_COLUMN] = sentAt.toISOString();
+        marked++;
+      }
+
+      if (marked === 0) {
+        logger.warn('Excel mark sent — email not found in sheet', { email: normalized });
+        return false;
+      }
+
+      workbook.Sheets[sheetName] = XLSX.utils.json_to_sheet(rawRows);
+      const out = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      await fs.writeFile(targetPath, out);
+
+      logger.info('Excel row marked as sent', { email: normalized, rows: marked });
+      return true;
+    });
+  }
+
   async parseFile(filePath?: string): Promise<ImportResult> {
     const targetPath = filePath ?? paths.excelFile();
 

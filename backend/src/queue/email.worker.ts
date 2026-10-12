@@ -7,7 +7,9 @@ import { llmService } from '../services/llm.service.js';
 import { emailService } from '../services/email.service.js';
 import { resumeService } from '../services/resume.service.js';
 import { logService } from '../services/log.service.js';
+import { excelParserService } from '../services/excel-parser.service.js';
 import { logger } from '../config/logger.js';
+import { isUnlimitedDailyLimit } from '../utils/daily-limit.js';
 import { CampaignStatus, LogStatus, QueueItemStatus } from '@prisma/client';
 
 interface EmailJobData {
@@ -48,9 +50,12 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
     campaign.todaySentCount = 0;
   }
 
-  if (campaign.todaySentCount >= campaign.dailyLimit) {
+  const config = await configService.loadConfig();
+  const dailyCapApplies =
+    !isUnlimitedDailyLimit(config.dailyEmailLimit) && !isUnlimitedDailyLimit(campaign.dailyLimit);
+
+  if (dailyCapApplies && campaign.todaySentCount >= campaign.dailyLimit) {
     logger.info('Daily limit reached, rescheduling', { campaignId });
-    const config = await configService.loadConfig();
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const [h, m] = config.workingHours.start.split(':').map(Number);
@@ -73,7 +78,6 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
     data: { status: QueueItemStatus.PROCESSING, attempts: { increment: 1 } },
   });
 
-  const config = await configService.loadConfig();
   const contact = queueItem.contact;
 
   try {
@@ -133,6 +137,7 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
           },
         });
 
+        const sentAt = new Date();
         await logService.createLog({
           campaignId,
           contactId: contact.id,
@@ -143,6 +148,13 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
           smtpResponse: result.response,
           aiStatus,
         });
+
+        try {
+          await excelParserService.markEmailAsSent(contact.email, sentAt);
+        } catch (excelError) {
+          const message = excelError instanceof Error ? excelError.message : String(excelError);
+          logger.warn('Failed to update Excel after send', { email: contact.email, error: message });
+        }
 
         sent = true;
         logger.info('Email sent', { to: contact.email, campaignId });

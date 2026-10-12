@@ -7,7 +7,7 @@ export const WorkingHoursSchema = z.object({
 });
 
 export const AppConfigSchema = z.object({
-  dailyEmailLimit: z.number().int().positive(),
+  dailyEmailLimit: z.number().int().min(0),
   workingHours: WorkingHoursSchema,
   defaultSchedule: z.object({
     mode: z.enum(['immediate', 'schedule']),
@@ -47,7 +47,7 @@ export type AppConfig = z.infer<typeof AppConfigSchema>;
 
 export const CreateCampaignSchema = z.object({
   jobRole: z.string().min(1, 'Job role is required'),
-  dailyLimit: z.number().int().positive().optional(),
+  dailyLimit: z.number().int().min(0).optional(),
   mode: z.enum(['immediate', 'schedule']),
   scheduledDate: z.string().optional(),
   scheduledTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
@@ -125,7 +125,7 @@ export interface CampaignProgress {
   skippedCount: number;
   todaySentCount: number;
   dailyLimit: number;
-  emailsRemaining: number;
+  emailsRemaining: number | null;
   startedAt: string | null;
   completedAt: string | null;
 }
@@ -134,8 +134,9 @@ export interface DashboardStats {
   activeCampaign: CampaignProgress | null;
   todaySent: number;
   dailyLimit: number;
-  emailsRemaining: number;
+  emailsRemaining: number | null;
   totalContacts: number;
+  totalSentAllTime: number;
   importReport: {
     totalRows: number;
     validRows: number;

@@ -15,7 +15,6 @@ import { ArrowLeft, Pause, Play, Plus, Settings, Square } from 'lucide-react';
 
 const campaignSchema = z.object({
   jobRole: z.string().min(1, 'Job role is required'),
-  dailyLimit: z.coerce.number().int().positive().optional(),
   mode: z.enum(['immediate', 'schedule']),
   scheduledDate: z.string().optional(),
   scheduledTime: z.string().optional(),
@@ -54,7 +53,6 @@ export function CampaignFormPanel({ compact = false }: { compact?: boolean }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: config } = useQuery({ queryKey: ['config'], queryFn: api.getConfig });
   const { data: dashboard } = useQuery({
     queryKey: ['dashboard'],
     queryFn: api.getDashboard,
@@ -68,7 +66,6 @@ export function CampaignFormPanel({ compact = false }: { compact?: boolean }) {
     resolver: zodResolver(campaignSchema),
     defaultValues: {
       jobRole: 'Full Stack Developer',
-      dailyLimit: undefined,
       mode: 'immediate',
       scheduledDate: new Date().toISOString().split('T')[0],
       scheduledTime: '09:00',
@@ -115,7 +112,6 @@ export function CampaignFormPanel({ compact = false }: { compact?: boolean }) {
   const onSubmit = (data: CampaignForm) => {
     createMutation.mutate({
       jobRole: data.jobRole,
-      dailyLimit: data.dailyLimit,
       mode: data.mode,
       scheduledDate: data.mode === 'schedule' ? data.scheduledDate : undefined,
       scheduledTime: data.mode === 'schedule' ? data.scheduledTime : undefined,
@@ -140,18 +136,7 @@ export function CampaignFormPanel({ compact = false }: { compact?: boolean }) {
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="dailyLimit">Daily email limit</Label>
-            <Input
-              id="dailyLimit"
-              type="number"
-              placeholder={String(config?.dailyEmailLimit ?? 20)}
-              disabled={!!isActive}
-              {...form.register('dailyLimit')}
-            />
-          </div>
-
-          <div className="space-y-2">
+          <div className="space-y-2 sm:col-span-2">
             <Label>Campaign mode</Label>
             <Select
               value={mode}
@@ -162,8 +147,8 @@ export function CampaignFormPanel({ compact = false }: { compact?: boolean }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="immediate">Send now</SelectItem>
-                <SelectItem value="schedule">Schedule</SelectItem>
+                <SelectItem value="immediate">Send now (fast burst)</SelectItem>
+                <SelectItem value="schedule">Spread through the day</SelectItem>
               </SelectContent>
             </Select>
           </div>

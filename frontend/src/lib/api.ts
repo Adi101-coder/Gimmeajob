@@ -23,8 +23,9 @@ export interface DashboardStats {
   activeCampaign: CampaignProgress | null;
   todaySent: number;
   dailyLimit: number;
-  emailsRemaining: number;
+  emailsRemaining: number | null;
   totalContacts: number;
+  totalSentAllTime: number;
   importReport: {
     totalRows: number;
     validRows: number;
@@ -44,7 +45,7 @@ export interface CampaignProgress {
   skippedCount: number;
   todaySentCount: number;
   dailyLimit: number;
-  emailsRemaining: number;
+  emailsRemaining: number | null;
   startedAt: string | null;
   completedAt: string | null;
 }
@@ -106,6 +107,21 @@ export const api = {
   getCampaignProgress: (id: string) => fetchApi<CampaignProgress>(`/campaigns/${id}`),
   previewEmail: (campaignId?: string) =>
     fetchApi<EmailPreview | null>(campaignId ? `/campaigns/${campaignId}/preview` : '/preview'),
+  getLogsSummary: () =>
+    fetchApi<{ totalSuccess: number; totalFailed: number; totalRetry: number }>('/logs/summary'),
+  downloadSentLogsCsv: () => {
+    const url = `${API_URL}/logs/export`;
+    return fetch(url, { headers: { 'x-api-key': API_SECRET } }).then(async (res) => {
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = href;
+      a.download = `sent-emails-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(href);
+    });
+  },
   getLogs: (params?: { search?: string; status?: string; page?: number; limit?: number }) => {
     const query = new URLSearchParams();
     if (params?.search) query.set('search', params.search);

@@ -28,7 +28,10 @@ export function SettingsPanel() {
   }
 
   const settings = [
-    { label: 'Daily email limit', value: String(config.dailyEmailLimit) },
+    {
+      label: 'Daily email limit',
+      value: config.dailyEmailLimit <= 0 ? 'Unlimited' : String(config.dailyEmailLimit),
+    },
     { label: 'Working hours', value: `${config.workingHours.start} – ${config.workingHours.end}` },
     { label: 'Timezone', value: config.workingHours.timezone },
     { label: 'SMTP host', value: `${config.smtp.host}:${config.smtp.port}` },

@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { api, type EmailLog } from '@/lib/api';
 import { cn, formatDate, getInitials, getLogStatusColor } from '@/lib/utils';
-import { Calendar, ChevronLeft, ChevronRight, Filter, Search } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Download, Filter, Search } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 interface FilterBarProps {
   search: string;
@@ -69,8 +70,15 @@ interface LogsListProps {
 
 export function LogsList({ selectedId, onSelect, search, status, tab, onTabChange }: LogsListProps) {
   const [page, setPage] = useState(1);
+  const { toast } = useToast();
 
   const effectiveStatus = tab === 'all' ? (status !== 'all' ? status : undefined) : tab === 'pending' ? undefined : tab;
+
+  const { data: summary } = useQuery({
+    queryKey: ['logs-summary'],
+    queryFn: api.getLogsSummary,
+    refetchInterval: 10000,
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['logs', search, effectiveStatus, page],
@@ -95,7 +103,24 @@ export function LogsList({ selectedId, onSelect, search, status, tab, onTabChang
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex gap-2 border-b border-white/10 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 px-4 py-3">
+        <span className="mr-auto text-xs text-white/50">
+          {summary ? `${summary.totalSuccess} sent · ${summary.totalFailed} failed (all time)` : '…'}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-1 text-white/70 hover:bg-white/10 hover:text-white"
+          onClick={() =>
+            api.downloadSentLogsCsv().catch((err: Error) =>
+              toast({ title: 'Export failed', description: err.message, variant: 'destructive' })
+            )
+          }
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export CSV
+        </Button>
         {tabs.map((t) => (
           <button
             key={t.id}

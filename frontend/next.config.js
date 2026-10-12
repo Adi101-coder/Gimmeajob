@@ -2,10 +2,12 @@ const fs = require('fs');
 const path = require('path');
 
 const rootEnv = path.join(__dirname, '../.env');
+const rootEnvKeysForFrontend = ['NEXT_PUBLIC_API_URL', 'API_SECRET'];
 if (fs.existsSync(rootEnv)) {
   for (const line of fs.readFileSync(rootEnv, 'utf8').split('\n')) {
     const match = line.match(/^\s*([^#=\s]+)\s*=\s*(.*)\s*$/);
     if (!match || process.env[match[1]]) continue;
+    if (!rootEnvKeysForFrontend.includes(match[1])) continue;
     process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, '');
   }
 }
